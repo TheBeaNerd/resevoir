@@ -1,0 +1,63 @@
+include "gates.qcl";
+
+qureg x[6];
+qureg y[6];
+qureg z[1];
+
+H(x);
+CPhase(pi,x);
+invMean(x);
+
+// 0.035156 |0>,  |1>,  |2>,  |3>,  |4>,  |5>,  |6>,  |7>,  |8>,  |9>,  |10>,  |11>,  |12>,  |13>,  |14>, 0.47266 |15>
+
+H(y);
+// 0.125 |0>, 0.125 |1>, 0.125 |2>, 0.125 |3>, 0.125 |4>, 0.125 |5>, 0.125 |6>, 0.125 |7>
+CPhase(pi,y);
+invMean(x&y);
+// 0.03125 |0>, 0.03125 |1>, 0.03125 |2>, 0.03125 |3>, 0.03125 |4>, 0.03125 |5>, 0.03125 |6>, 0.78125 |7>
+CPhase(pi,y);
+invMean(x&y);
+// 0.0078125 |0>, 0.0078125 |1>, 0.0078125 |2>, 0.0078125 |3>, 0.0078125 |4>, 0.0078125 |5>, 0.0078125 |6>, 0.94531 |7>
+
+//
+// Swap x target.  Since we are evaluating the oracle, we also invert to maximize the damage.
+//
+CPhase(pi,x);
+invMean(x);
+CNot(z,x);
+CNot(x,z);
+Not(x);
+CNot(z,x);
+Not(x);
+
+// Undo y
+CPhase(pi,y);
+CPhase(pi,y);
+invMean(x&y);
+// 0.03125 |0>, 0.03125 |1>, 0.03125 |2>, 0.03125 |3>, 0.03125 |4>, 0.03125 |5>, 0.03125 |6>, 0.78125 |7>
+CPhase(pi,y);
+invMean(x&y);
+// 0.125 |0>, 0.125 |1>, 0.125 |2>, 0.125 |3>, 0.125 |4>, 0.125 |5>, 0.125 |6>, 0.125 |7>
+
+// 0.041565 |0>,  |1>,  |2>,  |3>,  |4>,  |5>,  |6>,  |7>,  |8>,  |9>,  |10>,  |11>,  |12>,  |13>,  |14>, 0.37653 |15>
+CNot(z,x);
+CNot(x,z);
+Not(x);
+CNot(z,x);
+
+// Note: there are residual harmonics floating around that
+// indicate the existence of a solution.  That is to say:
+
+
++ - + + + + + +  + - + + + + + +  + 0 + 0 + + + +  a 0 a 0 a 0 a +
++ + - + + + + +                                                   
++ + + - + + + +  + + + - + + + +  0 - 0 + 0 0 0 0  a 0 a + a  0 a 0
++ + + + - + + +                                                   
++ + + + + - + +  + + + + + - + +  + + + + + 0 + 0 -a --a 0 -a 0-a 0
++ + + + + + - +                                                   
++ + + + + + + -  + + + + + + + -  0 0 0 0 0 - 0 +  a 0 a 0 a + a 0
+- + + + + + + +  
+
+// If you can do this, you end up with a coefficient of unknown
+// phase but at a known harmonic.  Perhaps you can amplify that
+// signal relative to the DC component?

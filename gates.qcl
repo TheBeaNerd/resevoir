@@ -1,0 +1,100 @@
+complex matrix Cpmix(real p) {
+  complex matrix m[4];
+  real c=sqrt(p);
+  real s=sqrt(1.0 - p);
+  m[0,0]=1.0;
+  m[1,1]=1.0;
+  m[2,2]=c;
+  m[2,3]=s;
+  m[3,2]=s;
+  m[3,3]=-c;
+  return m;
+}
+
+complex matrix Cnmix(real p) {
+  complex matrix m[4];
+  real c=sqrt(p);
+  real s=sqrt(1.0 - p);
+  m[0,0]=1.0;
+  m[1,1]=1.0;
+  m[2,2]=-c;
+  m[2,3]=-s;
+  m[3,2]=-s;
+  m[3,3]=c;
+  return m;
+}
+
+cond operator CMatrix(complex matrix m,qureg r) {
+  qureg e=cond;
+  qureg f[1];
+  CNot(f,e);
+  Matrix(m,r&f);
+  CNot(f,e);
+}
+
+cond operator cH(qureg r) {
+  int i;
+  for i=0 to #r-1 { CMatrix(Cpmix(0.5),r[i]); }
+}
+
+cond operator Negate(qureg r) {
+  complex matrix m[4];
+  m[0,0]=1.0;
+  m[1,1]=1.0;
+  m[2,2]= -1.0;
+  m[2,3]=  0.0;
+  m[3,2]=  0.0;
+  m[3,3]= -1.0;
+  CMatrix(m,r[0]);
+}
+
+// Mixes 1 |0> into 0.33333 |0>, 0.33333 |1>, 0.33333 |2>
+// The first two steps are required to make |0> DC
+cond operator H3(qureg x, qureg y) {
+  !CPhase(pi,x);
+  if x { !cH(y); }
+  CMatrix(Cpmix(1.0/3.0),x);
+  if x { cH(y); }
+  Not(x);
+}
+
+// Mixes 1 |0> into 1/7'ths 
+cond operator H7(qureg x, qureg y, qureg z) {
+  CMatrix(Cpmix(1.0/7.0),x);
+  Not(x);
+  CNot(y,x);
+  CNot(z,x);
+  Not(x);
+  if x { H3(y,z); }
+  Not(x);
+  cH(x);
+  if y&z { cH(x); Not(x); }
+}
+
+// Hor2 for SAT problems
+cond operator Hor2(qureg x, qureg y) {
+  H3(x,y);
+  Not(x);
+  Not(y);
+}
+
+cond operator Hor2v(qureg z) {
+  int i;
+  for i=0 to #z-1 step 2 { Hor2(z[i],z[i+1]); }
+}
+
+cond operator invMean(qureg x) {
+  cH(x);
+  Not(x);
+  CPhase(pi,x);
+  !Not(x);
+  cH(x);
+  Negate(x);
+}
+
+cond operator nand(qureg x, qureg y, qureg f) {
+  qureg z[1];
+  CNot(x&y,f);
+  Not(f);
+  CNot(x&y,f);
+}
